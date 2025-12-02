@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Copy of Copy of Copy of Copy of Recipe Content Generator",
+  "description": "A multi-page React application with swipe navigation, including a recipe content generator that automatically creates SEO-optimized materials for recipe video and social media posts, leveraging the Gemini API for content generation.",
+  "requestFramePermissions": []
+}
