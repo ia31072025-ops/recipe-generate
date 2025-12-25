@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+
 import HomePage from './pages/HomePage';
 import RecipeGeneratorPage from './pages/RecipeGeneratorPage';
 import AboutPage from './pages/AboutPage';
+
 import Header from './components/Header';
 import PageIndicator from './components/PageIndicator';
 import { PageConfig } from './types';
@@ -13,13 +15,17 @@ const pages: PageConfig[] = [
 ];
 
 const App: React.FC = () => {
-  const [currentPageIndex, setCurrentPageIndex] = useState<number>(1); // Start on RecipeGeneratorPage
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(1); // стартуем с 2-й страницы
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startX, setStartX] = useState<number>(0);
-  const [currentX, setCurrentX] = useState<number>(0);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const pageWidthRef = useRef<number>(0);
 
+  // Используем рефы для хранения позиций для плавного обновления без перерисовок
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+
+  // Вычисление ширины страницы
   const calculatePageWidth = useCallback(() => {
     if (containerRef.current) {
       pageWidthRef.current = containerRef.current.offsetWidth;
@@ -32,85 +38,105 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', calculatePageWidth);
   }, [calculatePageWidth]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const target = e.target as HTMLElement;
-    // Check if the interaction started on an interactive element
-    const isInteractiveElement = target.closest('input, button, textarea, a, select');
+  // Проверка, что событие не на интерактивном элементе
+  const isEventOnInteractiveElement = (target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) return false;
+    return !!target.closest('input, button, textarea, a, select');
+  };
 
-    if (isInteractiveElement) {
-      // Allow default behavior for interactive elements (e.g., input focus)
-      return;
+  // Начало перетаскивания (для touch)
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isEventOnInteractiveElement(e.target)) {
+      return; // не мешаем интерактивным элементам
     }
 
-    // Only prevent default if we intend to start a swipe gesture
-    e.preventDefault(); // Prevent scrolling/zooming for swipe gesture
+    // Запоминаем стартовую позицию
+    startXRef.current = e.touches[0].clientX;
+    currentXRef.current = e.touches[0].clientX;
+
     setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-    setCurrentX(e.touches[0].clientX);
+
+    // Запретить скролл и масштабирование для свайпа
+    e.preventDefault();
   }, []);
 
+  // Движение пальца по экрану
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
-    setCurrentX(e.touches[0].clientX);
+
+    currentXRef.current = e.touches[0].clientX;
+    // Тут не вызываем setState чтобы не перерисовывать лишний раз
+    // Для визуального движения используем translateX ниже с currentXRef
+
+    // Предотвращаем скролл во время драга
+    e.preventDefault();
   }, [isDragging]);
 
+  // Завершаем свайп (touch)
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return;
+
     setIsDragging(false);
 
-    const diffX = currentX - startX;
-    const swipeThreshold = pageWidthRef.current * 0.2; // 20% of page width
+    const diffX = currentXRef.current - startXRef.current;
+    const threshold = pageWidthRef.current * 0.2;
 
-    if (diffX > swipeThreshold && currentPageIndex > 0) {
+    if (diffX > threshold && currentPageIndex > 0) {
       setCurrentPageIndex((prev) => prev - 1);
-    } else if (diffX < -swipeThreshold && currentPageIndex < pages.length - 1) {
+    } else if (diffX < -threshold && currentPageIndex < pages.length - 1) {
       setCurrentPageIndex((prev) => prev + 1);
     }
 
-    // Reset currentX and startX for smooth transition after swipe
-    setStartX(0);
-    setCurrentX(0);
-  }, [isDragging, currentX, startX, currentPageIndex]);
+    // Сбросим позиции
+    startXRef.current = 0;
+    currentXRef.current = 0;
+  }, [isDragging, currentPageIndex]);
+
+  // Аналогичная логика для мыши
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    // Check if the interaction started on an interactive element
-    const isInteractiveElement = target.closest('input, button, textarea, a, select');
-
-    if (isInteractiveElement) {
-      // Allow default behavior for interactive elements
+    if (isEventOnInteractiveElement(e.target)) {
       return;
     }
 
-    e.preventDefault(); // Prevent default browser drag behavior ONLY if not on an interactive element
+    startXRef.current = e.clientX;
+    currentXRef.current = e.clientX;
     setIsDragging(true);
-    setStartX(e.clientX);
-    setCurrentX(e.clientX);
+
+    // Предотвращаем выделение текста при перетаскивании
+    e.preventDefault();
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging) return;
-    setCurrentX(e.clientX);
+    currentXRef.current = e.clientX;
   }, [isDragging]);
 
   const handleMouseUp = useCallback(() => {
-    handleTouchEnd(); // Re-use touch end logic for mouse up
+    handleTouchEnd(); // переиспользуем логику завершения свайпа
   }, [handleTouchEnd]);
 
   const handleMouseLeave = useCallback(() => {
     if (isDragging) {
-      handleTouchEnd(); // End swipe if mouse leaves container while dragging
+      handleTouchEnd();
     }
   }, [isDragging, handleTouchEnd]);
 
+  // Изменение страницы по индикатору
   const handlePageChange = useCallback((index: number) => {
     setCurrentPageIndex(index);
   }, []);
 
-  const translateXValue = currentPageIndex * -pageWidthRef.current + (isDragging ? currentX - startX : 0);
+  // Рассчитываем трансформацию с учётом перемещения при свайпе
+  const offsetX = isDragging ? currentXRef.current - startXRef.current : 0;
+  const translateXValue = currentPageIndex * -pageWidthRef.current + offsetX;
 
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
+    <div
+      className="min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50"
+      // Запрет выделения текста при перетаскивании
+      style={{ userSelect: isDragging ? 'none' : 'auto', touchAction: 'pan-y' }} 
+    >
       <Header title={pages[currentPageIndex].name} />
 
       <div
@@ -119,6 +145,7 @@ const App: React.FC = () => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -129,7 +156,10 @@ const App: React.FC = () => {
           style={{ transform: `translateX(${translateXValue}px)` }}
         >
           {pages.map((Page, index) => (
-            <div key={Page.name} className="flex-shrink-0 w-full h-full flex justify-center items-start pt-4 pb-20">
+            <div
+              key={Page.name}
+              className="flex-shrink-0 w-full h-full flex justify-center items-start pt-4 pb-20"
+            >
               <Page.component />
             </div>
           ))}
@@ -146,3 +176,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
