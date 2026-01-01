@@ -1,33 +1,67 @@
-name: Авто‑деплой на GitHub Pages
+name: Deploy Website to GitHub Pages
 
 on:
   push:
     branches:
-      - main  # workflow запускается при пуше в main
+      - main  # Запускается при пуше в main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Install deps
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
+      # 2. Публикуем на GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          github_token: ${{ secrets.GH_PAT }}  #name: Deploy Website to GitHub Pages
 
+on:
+  push:
+    branches:
+      - main  # Запускается при пуше в main
 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Публикуем на GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GH_PAT }}  # name: Deploy Website to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Запускается при пуше в main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Публикуем на GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GH_PAT }}  #
+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
+          publish_dir: ./  # <- файлы сайта лежат прямо в корне
+
+          publish_dir: ./  # <- файлы сайта лежат прямо в корне
+
+          publish_dir: ./  # <- файлы сайта лежат прямо в корне
