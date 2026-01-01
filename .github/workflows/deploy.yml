@@ -1,1 +1,4 @@
+git add .github/workflows/deploy.yml
+git commit -m "Добавил авто-деплой на GitHub Pages"
+git push origin main
 
