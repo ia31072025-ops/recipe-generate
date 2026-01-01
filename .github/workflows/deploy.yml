@@ -3,65 +3,18 @@ name: Deploy Website to GitHub Pages
 on:
   push:
     branches:
-      - main  # Запускается при пуше в main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Клонируем репозиторий
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Публикуем на GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GH_PAT }}  #name: Deploy Website to GitHub Pages
-
-on:
-  push:
-    branches:
-      - main  # Запускается при пуше в main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1. Клонируем репозиторий
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2. Публикуем на GitHub Pages
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GH_PAT }}  # name: Deploy Website to GitHub Pages
-
-on:
-  push:
-    branches:
-      - main  # Запускается при пуше в main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1. Клонируем репозиторий
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2. Публикуем на GitHub Pages
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GH_PAT }}  #
-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
-          publish_dir: ./  # <- файлы сайта лежат прямо в корне
-
-          publish_dir: ./  # <- файлы сайта лежат прямо в корне
-
-          publish_dir: ./  # <- файлы сайта лежат прямо в корне
+          github_token: ${{ secrets.GH_PAT }}
+          publish_dir: ./
