@@ -1,11 +1,403 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Recipe Generate</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chef - Генератор контента для рецептов</title>
+    
+    <!-- Подключение Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение иконок FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Шрифт Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #556270;
+            --accent-color: #4ecdc4;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        /* Герой-секция (Шапка) */
+        .hero-section {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: white;
+            padding: 80px 0 60px;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Поле ввода */
+        .search-container {
+            background: white;
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            display: flex;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            border: none;
+            flex-grow: 1;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            outline: none;
+        }
+
+        .search-btn {
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: 600;
+            background-color: var(--primary-color);
+            border: none;
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:hover {
+            background-color: #ff5252;
+            transform: scale(1.05);
+        }
+
+        /* Карточки результатов */
+        .result-card {
+            background: white;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header-custom {
+            background-color: transparent;
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            font-weight: 700;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Табы */
+        .nav-pills .nav-link {
+            color: var(--secondary-color);
+            border-radius: 10px;
+            margin-right: 5px;
+            font-weight: 600;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Промпты для изображений */
+        .prompt-box {
+            background-color: #f1f3f5;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-color);
+            font-family: monospace;
+            color: #d63384;
+            position: relative;
+        }
+
+        .copy-icon {
+            cursor: pointer;
+            color: var(--secondary-color);
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .copy-icon:hover { opacity: 1; }
+
+        /* Лоадер */
+        .loader-container {
+            display: none;
+            padding: 50px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-  <h1>Сайт работает 🚀</h1>
-  <p>GitHub Pages успешно запущен.</p>
+
+    <!-- Шапка приложения -->
+    <header class="hero-section text-center">
+        <div class="container">
+            <h1 class="hero-title"><i class="fas fa-hat-chef"></i> AI Chef Content Generator</h1>
+            <p class="lead mb-4">Превратите название блюда в вирусный контент для всех платформ за секунды.</p>
+            
+            <div class="search-container">
+                <input type="text" id="recipeInput" class="search-input" placeholder="Введите название рецепта (например: Паста Карбонара)">
+                <button class="search-btn" onclick="generateContent()">
+                    <i class="fas fa-magic me-2"></i>Генерировать
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="container mb-5">
+        
+        <!-- Анимация загрузки -->
+        <div id="loader" class="loader-container">
+            <div class="spinner-border text-danger" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <h4 class="mt-3 text-muted">Наш ИИ-шеф готовит контент-план...</h4>
+            <p class="small text-muted">Подбираем ключевые слова и промпты</p>
+        </div>
+
+        <!-- Результаты (Скрыты по умолчанию) -->
+        <div id="resultsArea" class="d-none">
+            
+            <!-- Навигация по вкладкам -->
+            <ul class="nav nav-pills mb-4 justify-content-center" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-youtube-tab" data-bs-toggle="pill" data-bs-target="#pills-youtube" type="button" role="tab"><i class="fab fa-youtube me-2"></i>YouTube</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-social-tab" data-bs-toggle="pill" data-bs-target="#pills-social" type="button" role="tab"><i class="fab fa-instagram me-2"></i>Соцсети</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-images-tab" data-bs-toggle="pill" data-bs-target="#pills-images" type="button" role="tab"><i class="fas fa-image me-2"></i>Генерация фото</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-seo-tab" data-bs-toggle="pill" data-bs-target="#pills-seo" type="button" role="tab"><i class="fas fa-search me-2"></i>SEO</button>
+                </li>
+            </ul>
+
+            <!-- Контент вкладок -->
+            <div class="tab-content" id="pills-tabContent">
+                
+                <!-- YouTube Вкладка -->
+                <div class="tab-pane fade show active" id="pills-youtube" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="result-card card">
+                                <div class="card-header-custom"><i class="fas fa-heading"></i> Кликбейтные заголовки</div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush" id="ytTitles">
+                                        <!-- JS заполнит это -->
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="result-card card">
+                                <div class="card-header-custom"><i class="fas fa-align-left"></i> Описание видео</div>
+                                <div class="card-body">
+                                    <textarea class="form-control" id="ytDescription" rows="6"></textarea>
+                                    <button class="btn btn-outline-secondary btn-sm mt-2" onclick="copyText('ytDescription')">Копировать описание</button>
+                                </div>
+                            </div>
+
+                            <div class="result-card card">
+                                <div class="card-header-custom"><i class="fas fa-tags"></i> Теги</div>
+                                <div class="card-body" id="ytTags">
+                                    <!-- JS заполнит это -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Соцсети Вкладка -->
+                <div class="tab-pane fade" id="pills-social" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="result-card card">
+                                <div class="card-header-custom"><i class="fab fa-instagram"></i> Instagram / VK Post</div>
+                                <div class="card-body">
+                                    <p id="instaPost">Здесь будет текст поста...</p>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="copyText('instaPost')"><i class="far fa-copy"></i> Копировать</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="result-card card">
+                                <div class="card-header-custom"><i class="fab fa-tiktok"></i> TikTok / Reels Script</div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled" id="tiktokScript">
+                                        <!-- Сценарий -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Изображения Вкладка -->
+                <div class="tab-pane fade" id="pills-images" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="result-card card">
+                                <div class="card-header-custom">
+                                    <i class="fas fa-tv"></i> Горизонтальное (Обложка YouTube 16:9)
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small">Скопируйте этот промпт в Midjourney или DALL-E:</p>
+                                    <div class="prompt-box mb-2" id="promptHorizontal">
+                                        Generating...
+                                    </div>
+                                    <button class="btn btn-sm btn-dark w-100" onclick="copyText('promptHorizontal')">Копировать Промпт</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="result-card card">
+                                <div class="card-header-custom">
+                                    <i class="fas fa-mobile-alt"></i> Вертикальное (Stories/Reels 9:16)
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small">Скопируйте этот промпт в Midjourney или DALL-E:</p>
+                                    <div class="prompt-box mb-2" id="promptVertical">
+                                        Generating...
+                                    </div>
+                                    <button class="btn btn-sm btn-dark w-100" onclick="copyText('promptVertical')">Копировать Промпт</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEO Вкладка -->
+                <div class="tab-pane fade" id="pills-seo" role="tabpanel">
+                    <div class="result-card card">
+                        <div class="card-body">
+                            <h5><i class="fas fa-globe"></i> SEO Мета-данные для блога</h5>
+                            <hr>
+                            <div class="mb-3">
+                                <strong>Meta Title:</strong>
+                                <p id="seoTitle" class="bg-light p-2 rounded">...</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Meta Description:</strong>
+                                <p id="seoDesc" class="bg-light p-2 rounded">...</p>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Ключевые слова (Keywords):</strong>
+                                <div id="seoKeywords"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-4 text-muted mt-auto border-top">
+        <p class="mb-0">© 2023 AI Chef Generator. Create tasty content.</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Скрипт логики (Симуляция работы) -->
+    <script>
+        function generateContent() {
+            const input = document.getElementById('recipeInput').value;
+            
+            if(!input) {
+                alert('Пожалуйста, введите название рецепта!');
+                return;
+            }
+
+            // Показать лоадер, скрыть результаты
+            document.getElementById('resultsArea').classList.add('d-none');
+            document.getElementById('loader').style.display = 'block';
+
+            // Симуляция API запроса (задержка 1.5 сек)
+            setTimeout(() => {
+                fillData(input);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('resultsArea').classList.remove('d-none');
+            }, 1500);
+        }
+
+        function fillData(recipeName) {
+            // Данные-заглушки (в реальном приложении здесь будет ответ от OpenAI API)
+            
+            // 1. YouTube
+            const titles = [
+                `СЕКРЕТ ИДЕАЛЬНОГО ${recipeName.toUpperCase()}! 🤤`,
+                `Вы готовили ${recipeName} НЕПРАВИЛЬНО! Исправьте это сейчас`,
+                `Лучший рецепт ${recipeName} за 10 минут!`,
+                `Шеф-повар в шоке от этого ${recipeName}!`
+            ];
+            
+            let titlesHtml = '';
+            titles.forEach(t => titlesHtml += `<li class="list-group-item d-flex justify-content-between align-items-center">${t} <i class="far fa-copy copy-icon" onclick="copyString('${t}')"></i></li>`);
+            document.getElementById('ytTitles').innerHTML = titlesHtml;
+
+            document.getElementById('ytDescription').value = `В этом видео я покажу вам, как приготовить самый вкусный ${recipeName} в домашних условиях.\n\n👇 Ингредиенты:\n- ...\n- ...\n\nНе забудьте подписаться на канал и нажать на колокольчик! #рецепт #${recipeName.replace(/\s/g, '')} #еда`;
+
+            const tags = [`#${recipeName}`, '#рецепты', '#кулинария', '#еда', '#вкусно', '#ужин', '#обед', '#chef'];
+            document.getElementById('ytTags').innerHTML = tags.map(t => `<span class="badge bg-secondary me-1">${t}</span>`).join('');
+
+            // 2. Socials
+            document.getElementById('instaPost').innerText = `Готовим ${recipeName} сегодня! 🥘 Это блюдо взорвет ваши вкусовые рецепторы. Сохраняйте, чтобы не потерять!\n\nСтавьте ❤️ если любите вкусно поесть!\n\n#${recipeName.replace(/\s/g, '')} #foodporn #instafood #рецепты`;
+            
+            document.getElementById('tiktokScript').innerHTML = `
+                <li><strong>0:00-0:03</strong>: Крупный план готового ${recipeName} (Слюнки текут). Текст: "Попробуй это!"</li>
+                <li><strong>0:03-0:15</strong>: Быстрая нарезка процесса под трендовую музыку. ASMR звуки нарезки.</li>
+                <li><strong>0:15-0:20</strong>: Проба блюда на камеру. Эмоция восторга.</li>
+            `;
+
+            // 3. Images Prompts
+            const basePrompt = `Professional food photography of ${recipeName}, michelin star plating, dramatic lighting, 8k resolution, highly detailed texture, steam rising`;
+            document.getElementById('promptHorizontal').innerText = `${basePrompt} --ar 16:9 --v 5.2`;
+            document.getElementById('promptVertical').innerText = `${basePrompt}, vertical composition for phone wallpaper --ar 9:16 --v 5.2`;
+
+            // 4. SEO
+            document.getElementById('seoTitle').innerText = `${recipeName}: Классический рецепт с фото и видео - Кулинарный блог`;
+            document.getElementById('seoDesc').innerText = `Узнайте, как приготовить ${recipeName} дома. Пошаговый рецепт, секретные ингредиенты и советы шеф-повара для идеального результата.`;
+            document.getElementById('seoKeywords').innerHTML = `<em>${recipeName}, рецепт ${recipeName}, как приготовить ${recipeName}, домашний ${recipeName}, вкусная еда</em>`;
+        }
+
+        // Функция копирования из элементов
+        function copyText(elementId) {
+            const el = document.getElementById(elementId);
+            let text = "";
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                text = el.value;
+            } else {
+                text = el.innerText;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Скопировано в буфер обмена!');
+            });
+        }
+
+        // Функция копирования строки напрямую
+        function copyString(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Заголовок скопирован!');
+            });
+        }
+    </script>
 </body>
 </html>
