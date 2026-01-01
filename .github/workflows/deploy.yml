@@ -1,4 +1,33 @@
-git add .github/workflows/deploy.yml
-git commit -m "Добавил авто-деплой на GitHub Pages"
-git push origin main
+name: Авто‑деплой на GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # workflow запускается при пуше в main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
 
