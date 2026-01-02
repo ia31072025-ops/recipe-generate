@@ -1,5 +1,8 @@
-import React from 'react'; // Import React for React.ComponentType
+import React from 'react'; // Для React.ComponentType
 
+// ======================
+// Типы для ингредиентов и постов в соцсетях
+// ======================
 export interface Ingredient {
   name: string;
   quantity: string;
@@ -7,13 +10,16 @@ export interface Ingredient {
 }
 
 export interface SocialMediaPost {
-  platform: 'VK' | 'Telegram' | 'Instagram' | 'TikTok'; // Добавлены Instagram и TikTok
-  type: 'Full Publication' | 'Post' | 'Reels Caption' | 'Shorts Caption' | 'TikTok Caption'; // Добавлены типы для коротких видео
-  text: string; // Текст поста
+  platform: 'VK' | 'Telegram' | 'Instagram' | 'TikTok';
+  type: 'Full Publication' | 'Post' | 'Reels Caption' | 'Shorts Caption' | 'TikTok Caption';
+  text: string;
 }
 
+// ======================
+// Основной интерфейс сгенерированного контента
+// ======================
 export interface GeneratedContent {
-  youtubeTitle: string[]; // Изменено на массив строк для нескольких названий
+  youtubeTitle: string[];              // Массив для нескольких вариантов названия
   youtubeDescription: string;
   youtubeTags: string[];
   socialMediaPosts: SocialMediaPost[];
@@ -25,9 +31,14 @@ export interface GeneratedContent {
   promotionTips?: string;
 }
 
+// ======================
+// Цветовые темы
+// ======================
 export type ThemeColor = 'blue' | 'purple' | 'green' | 'red';
 
-// New interface for page configuration
+// ======================
+// Конфигурация страницы
+// ======================
 export interface PageConfig {
   name: string;
   component: React.ComponentType;
